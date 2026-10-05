@@ -83,7 +83,9 @@ export function observeDirectory(
     buffered = undefined;
     release();
     emit({ loading: false, error: error instanceof Error ? error.message : String(error) });
-    if (!retry) retry = setTimeout(() => { retry = undefined; void start(); }, 3_000);
+    if (!lifetime.signal.aborted && !retry) {
+      retry = setTimeout(() => { retry = undefined; void start(); }, 3_000);
+    }
   }
 
   function snapshot(first: PaseoAgentListResult): void {
@@ -140,4 +142,20 @@ export function observeDirectory(
     if (retry) clearTimeout(retry);
     release();
   };
+}
+
+export function readFreshDirectory(paseo: PaseoApi, signal: AbortSignal): Promise<ReadonlyMap<string, PaseoAgent>> {
+  return new Promise((resolve, reject) => {
+    if (signal.aborted) { reject(new Error("The agent directory request was canceled.")); return; }
+    let stop: (() => void) | undefined;
+    const abort = () => { stop?.(); reject(new Error("The agent directory request was canceled.")); };
+    signal.addEventListener("abort", abort, { once: true });
+    stop = observeDirectory(paseo, (state) => {
+      if (state.loading) return;
+      stop?.();
+      signal.removeEventListener("abort", abort);
+      if (state.error) reject(new Error(state.error));
+      else resolve(state.agents);
+    });
+  });
 }

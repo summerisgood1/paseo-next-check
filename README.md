@@ -12,7 +12,7 @@ Paseo `0.11.0-beta.4` 嘅 plugin API 只提供 Tasks／Subagents 同一行嘅 co
 
 ## 安裝
 
-需要 app 同 daemon 都係 Paseo `0.11.0-beta.4` 或相容新版本，亦要開咗 plugins。
+需要 app 同 daemon 都係 Paseo `0.11.0-beta.4` 或相容新版本，亦要開咗 plugins。開發測試用 Node `22.18+`。
 
 ```sh
 npm ci

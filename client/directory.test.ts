@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { setImmediate } from "node:timers/promises";
 import { test } from "node:test";
 import type { OwnedSubscription, PaseoAgent, PaseoAgentListResult, PaseoApi } from "@getpaseo/client";
-import { observeDirectory, readAllAgents, type DirectoryState } from "./directory.ts";
+import { observeDirectory, readAllAgents, readFreshDirectory, type DirectoryState } from "./directory.ts";
 import { unreadQueue } from "../shared/queue.ts";
 
 function agent(id: string, requiresAttention = true): PaseoAgent {
@@ -114,5 +114,31 @@ test("停用 plugin 會取消未完成讀取，唔會再發佈結果", async () 
   complete({ ...page([agent("A")]), subscription: { release: async () => { releases++; } } as any });
   await setImmediate();
   assert.equal(states.length, before);
+  assert.equal(releases, 1);
+});
+
+test("跳轉前補頁都要接收 live 已讀更新，完成就釋放暫時訂閱", async () => {
+  const initial = page([agent("A")], "second");
+  let complete!: (result: PaseoAgentListResult) => void;
+  const tail = new Promise<PaseoAgentListResult>((resolve) => { complete = resolve; });
+  let observer!: Parameters<OwnedSubscription<PaseoAgentListResult>["subscribe"]>[0];
+  let releases = 0;
+  const subscription: OwnedSubscription<PaseoAgentListResult> = {
+    subscriptionId: "navigation",
+    ready: Promise.resolve({ ...initial, subscriptionId: "navigation" }),
+    subscribe(next) {
+      observer = next;
+      next.snapshot({ ...initial, subscriptionId: "navigation" });
+      return () => {};
+    },
+    async release() { releases++; },
+  };
+  const api = fakeApi(async (options) => options.subscribe ? { ...initial, subscription } : tail);
+  const pending = readFreshDirectory(api, new AbortController().signal);
+  await setImmediate();
+  observer.update({ type: "agent_update", payload: { kind: "upsert", agent: agent("A", false) } } as any);
+  complete(page([agent("B")]));
+  const agents = await pending;
+  assert.equal(unreadQueue(agents.values())[0]?.id, "B");
   assert.equal(releases, 1);
 });

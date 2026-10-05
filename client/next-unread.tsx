@@ -1,37 +1,34 @@
 import type { PluginScreenProps } from "@getpaseo/plugin/client";
 import { usePaseo } from "@getpaseo/plugin/client";
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { unreadQueue } from "../shared/queue.ts";
-import { readAllAgents } from "./directory.ts";
+import { readFreshDirectory } from "./directory.ts";
 
 export function NextUnreadScreen({ params, navigation, host, theme, layout }: PluginScreenProps) {
   const paseo = usePaseo();
   const originAgentId = params.originAgentId;
-  const [attempt, setAttempt] = useState(0);
-  const [message, setMessage] = useState<string | null>(null);
+  const directory = useQuery({
+    queryKey: ["next-unread", host.id, originAgentId],
+    queryFn: ({ signal }) => readFreshDirectory(paseo, signal),
+    enabled: Boolean(navigation),
+    retry: false,
+    gcTime: 0,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: false,
+  });
+  const message = !navigation ? "Update Paseo to open the next unread chat."
+    : directory.error?.message ?? null;
 
   useEffect(() => {
-    const request = new AbortController();
-    setMessage(null);
-    if (!navigation) {
-      setMessage("Update Paseo to open the next unread chat.");
-      return () => request.abort();
-    }
-    void readAllAgents(paseo, request.signal).then((agents) => {
-      if (request.signal.aborted) return;
-      // 原生 focus／blur 嘅已讀更新可以遲一步；今次操作唔會揀返來源 chat。
-      const next = unreadQueue(agents.values(), originAgentId)[0];
-      if (next) navigation.openAgent({ agentId: next.id, serverId: host.id });
-      else if (originAgentId) navigation.openAgent({ agentId: originAgentId, serverId: host.id });
-      else setMessage("All caught up. No unread replies.");
-    }).catch((error: unknown) => {
-      if (!request.signal.aborted) {
-        setMessage(error instanceof Error ? error.message : "Could not load unread chats.");
-      }
-    });
-    return () => request.abort();
-  }, [paseo, navigation, host.id, originAgentId, attempt]);
+    if (!navigation || !directory.data || directory.isFetching) return;
+    // 原生 focus／blur 嘅已讀更新可以遲一步；今次操作唔會揀返來源 chat。
+    const next = unreadQueue(directory.data.values(), originAgentId)[0];
+    if (next) navigation.openAgent({ agentId: next.id, serverId: host.id });
+    else if (originAgentId) navigation.openAgent({ agentId: originAgentId, serverId: host.id });
+  }, [directory.data, directory.isFetching, navigation, host.id, originAgentId]);
 
   return (
     <View style={{
@@ -46,7 +43,7 @@ export function NextUnreadScreen({ params, navigation, host, theme, layout }: Pl
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, justifyContent: "center" }}>
           <Pressable
             accessibilityRole="button"
-            onPress={() => setAttempt((value) => value + 1)}
+            onPress={() => void directory.refetch()}
             style={{ borderRadius: 8, padding: 12, backgroundColor: theme.colors.accent }}
           >
             <Text style={{ color: theme.colors.accentForeground }}>Retry</Text>
