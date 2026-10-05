@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="zh-HK">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Next check · 可撳原型</title>
+  <style>
+    :root { color-scheme: light; --bg:#f4f4f2; --panel:#fff; --raised:#f7f7f5; --ink:#252625; --muted:#70736f; --line:#e3e4df; --accent:#426d5b; --accent-bg:#edf4ef; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    body.dark { color-scheme:dark; --bg:#181b19; --panel:#222624; --raised:#292e2b; --ink:#e8ece9; --muted:#a3ada6; --line:#39423c; --accent:#a0c8b1; --accent-bg:#2d3c33; }
+    button,input { font:inherit; }
+    button { cursor:pointer; border:1px solid var(--line); color:var(--ink); background:var(--panel); border-radius:7px; padding:7px 12px; }
+    button:hover { background:var(--raised); border-color:var(--muted); }
+    button:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+    button:disabled { opacity:.4; cursor:default; }
+    button.primary { color:var(--accent); background:var(--accent-bg); border-color:var(--accent); }
+    .wrap { max-width:1150px; padding:28px 22px 50px; margin:auto; }
+    h1 { margin:0; font-size:25px; font-weight:650; letter-spacing:-.6px; }
+    h2 { margin:0 0 10px; font-size:14px; font-weight:650; }
+    p { margin:6px 0; }
+    .intro { max-width:740px; color:var(--muted); margin:8px 0 20px; }
+    .badge { display:inline-block; color:var(--muted); font-size:11px; font-weight:500; border:1px solid var(--line); padding:2px 7px; border-radius:5px; vertical-align:middle; margin-left:8px; letter-spacing:0; }
+    .topline { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .layout { display:grid; grid-template-columns:minmax(0,1fr) 265px; gap:18px; }
+    .app { display:grid; grid-template-columns:180px minmax(0,1fr); min-height:430px; border:1px solid var(--line); border-radius:10px; overflow:hidden; background:var(--panel); }
+    .sidebar { background:var(--raised); border-right:1px solid var(--line); padding:16px 10px; }
+    .sidebar-title { color:var(--muted); padding:0 8px 12px; font-size:12px; }
+    .workspace { padding:12px 8px 4px; color:var(--muted); font-size:11px; font-weight:650; }
+    .room { display:flex; gap:7px; align-items:center; margin:3px 0; }
+    .room-open { flex:1; border:0; text-align:left; padding:6px 8px; background:transparent; display:flex; align-items:center; gap:8px; }
+    .room-open.active { color:var(--accent); background:var(--accent-bg); }
+    .dot { width:6px; height:6px; border-radius:50%; background:var(--accent); flex-shrink:0; }
+    .dot.read { background:transparent; }
+    .unread-small { padding:4px 6px; background:transparent; border:0; font-size:11px; color:var(--muted); }
+    .chat { min-width:0; display:flex; flex-direction:column; }
+    .chat-head { padding:15px 18px; border-bottom:1px solid var(--line); }
+    .breadcrumb { font-size:11px; color:var(--muted); }
+    .chat-title { font-size:16px; font-weight:650; margin-top:3px; }
+    .conversation { flex:1; padding:22px 20px; }
+    .author { color:var(--muted); font-size:11px; margin-bottom:7px; }
+    .message { font-size:15px; max-width:480px; }
+    .message-detail { color:var(--muted); margin-top:12px; font-size:12px; }
+    .composer { padding:12px 18px 17px; }
+    .pills { display:flex; gap:7px; align-items:center; margin-bottom:9px; }
+    .pill { border-radius:20px; padding:4px 11px; font-size:12px; background:var(--raised); }
+    .pill-static { color:var(--muted); border:1px solid var(--line); }
+    .next-pill { color:var(--accent); background:var(--accent-bg); font-weight:600; }
+    .input { display:flex; align-items:center; justify-content:space-between; gap:10px; border:1px solid var(--line); border-radius:9px; padding:11px 12px; color:var(--muted); background:var(--panel); }
+    .send { font-size:12px; }
+    .inspector { padding:16px; border:1px solid var(--line); border-radius:10px; background:var(--panel); }
+    .field { margin:10px 0; }
+    .field-label { color:var(--muted); font-size:11px; }
+    .field-value { font-weight:600; overflow-wrap:anywhere; }
+    .divider { border-top:1px solid var(--line); margin:16px 0; }
+    .queue-row { display:grid; grid-template-columns:19px minmax(0,1fr) auto; gap:7px; padding:8px 0; border-bottom:1px solid var(--line); }
+    .queue-row:last-child { border-bottom:0; }
+    .rank,.time { color:var(--muted); font-size:11px; }
+    .queue-name { font-size:13px; }
+    .queue-detail { color:var(--muted); font-size:11px; overflow-wrap:anywhere; }
+    .empty { color:var(--muted); padding:15px 0; font-size:13px; }
+    .status { color:var(--accent); background:var(--accent-bg); border-radius:7px; padding:10px 12px; margin:16px 0; min-height:42px; }
+    .freeplay { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 22px; }
+    .walkthrough { border:1px solid var(--line); border-radius:10px; padding:17px; background:var(--panel); }
+    .tabs { display:flex; gap:5px; flex-wrap:wrap; border-bottom:1px solid var(--line); padding-bottom:12px; margin-bottom:13px; }
+    .tab { border:0; color:var(--muted); font-size:12px; padding:5px 10px; }
+    .tab.selected { color:var(--accent); background:var(--accent-bg); }
+    .scenario-copy { color:var(--muted); font-size:13px; }
+    .steps { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+    .step { font-size:12px; }
+    .step.done { color:var(--accent); }
+    .footnote { color:var(--muted); font-size:11px; margin-top:13px; }
+    @media(max-width:850px) { .layout { grid-template-columns:1fr; } .inspector { display:grid; grid-template-columns:1fr 1fr; column-gap:20px; } .inspector .divider { display:none; } .queue-section { grid-column:2; grid-row:1 / span 4; } }
+    @media(max-width:530px) { .wrap { padding:18px 12px 30px; } h1 { font-size:22px; } .badge { display:block; width:fit-content; margin:5px 0 0; } .app { grid-template-columns:115px minmax(0,1fr); min-height:430px; } .sidebar { padding:12px 4px; } .workspace { font-size:10px; padding:10px 5px 3px; } .room { gap:0; } .room-open { padding:6px 5px; font-size:12px; gap:5px; } .unread-small { font-size:10px; padding:4px 2px; } .chat-head { padding:12px; } .conversation { padding:16px 12px; } .message { font-size:14px; } .composer { padding:10px 10px 12px; } .inspector { column-gap:12px; padding:13px; } .pills { gap:5px; } .pill { padding:4px 8px; } .input { padding:9px; font-size:12px; } }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="topline">
+      <h1>Next check <span class="badge">可撳原型 · 示範資料</span></h1>
+      <button id="theme" aria-label="切換深色或淺色">深色</button>
+    </div>
+    <p class="intro">試下輸入框旁邊嘅 Next：按待睇時間由舊到新，開返每個 chat 所屬嘅 workspace。自己開 chat 就算已睇；手動標成 unread，之後都會跳返去。</p>
+
+    <div class="layout">
+      <section class="app" aria-label="Paseo 操作示範">
+        <nav class="sidebar" aria-label="Workspaces 同 chats">
+          <div class="sidebar-title">Workspaces</div>
+          <div id="rooms"></div>
+        </nav>
+        <section class="chat" aria-label="目前 chat">
+          <header class="chat-head">
+            <div class="breadcrumb" id="breadcrumb"></div>
+            <div class="chat-title" id="chat-title"></div>
+          </header>
+          <div class="conversation">
+            <div class="author">Agent</div>
+            <div class="message" id="message"></div>
+            <div class="message-detail" id="message-detail"></div>
+          </div>
+          <div class="composer">
+            <div class="pills">
+              <span class="pill pill-static">Tasks</span>
+              <button class="pill next-pill" id="next">Next</button>
+            </div>
+            <div class="input"><span>輸入訊息…</span><button class="send" disabled>Send</button></div>
+          </div>
+        </section>
+      </section>
+      <aside class="inspector" aria-label="目前狀態">
+        <h2>目前狀態</h2>
+        <div class="field"><div class="field-label">Workspace</div><div class="field-value" id="current-workspace"></div></div>
+        <div class="field"><div class="field-label">Chat</div><div class="field-value" id="current-chat"></div></div>
+        <div class="field"><div class="field-label">待睇數目</div><div class="field-value" id="pending-count"></div></div>
+        <div class="divider"></div>
+        <section class="queue-section"><h2>待睇次序</h2><div id="queue"></div></section>
+      </aside>
+    </div>
+
+    <div class="status" role="status" aria-live="polite" id="status"></div>
+    <h2>自由試下</h2>
+    <div class="freeplay" id="freeplay">
+      <button data-reply="A">A 再回覆</button>
+      <button data-reply="B">B 再回覆</button>
+      <button data-reply="C">C 再回覆</button>
+      <button id="mark-current">目前 chat 標 unread</button>
+      <button id="reset">重設</button>
+    </div>
+
+    <section class="walkthrough" aria-label="逐步試情境">
+      <h2>逐步試情境</h2>
+      <div class="tabs" role="tablist" id="tabs"></div>
+      <p class="scenario-copy" id="scenario-copy"></p>
+      <div class="steps" id="steps"></div>
+      <p class="footnote">每個 chat 只佔一個待睇位置。未睇前再收到回覆，保留原有位置；手動標 unread，就用標記時間重新排隊。呢頁只係原型，唔會改你真正嘅 chats。</p>
+    </section>
+  </main>
+
+  <script>
+    // 狀態邏輯獨立於畫面，方便之後沿用到 plugin。
+    function initialState(hasUnread) {
+      return {
+        currentId: "D",
+        clock: 604,
+        note: hasUnread ? "A、B、C 已回覆。撳 Next，先去最早回覆嘅 A。" : "目前冇待睇 chat。試下手動標 unread。",
+        rooms: [
+          { id:"A", workspaceId:"work", workspace:"work", title:"Agent A", content:"登入修改做好咗，你可以睇 diff。", unread:hasUnread, pendingAt:601, reason:"回覆完成", replies:1 },
+          { id:"B", workspaceId:"notewing", workspace:"notewing.me", title:"Agent B", content:"詞彙頁整理好咗，等你睇下一步。", unread:hasUnread, pendingAt:602, reason:"回覆完成", replies:1 },
+          { id:"C", workspaceId:"paseo", workspace:"paseo-plugin", title:"Agent C", content:"Next check 嘅接法查好咗，等你睇。", unread:hasUnread, pendingAt:603, reason:"回覆完成", replies:1 },
+          { id:"D", workspaceId:"paseo", workspace:"paseo-plugin", title:"目前 chat", content:"呢度係你而家開緊嘅 chat。其他 workspaces 嘅回覆都會喺 Next 排隊。", unread:false, pendingAt:null, reason:null, replies:1 }
+        ]
+      };
+    }
+    function pendingRooms(state) {
+      return state.rooms.filter(function(room) { return room.unread; }).sort(function(a,b) {
+        return a.pendingAt-b.pendingAt || a.id.localeCompare(b.id);
+      });
+    }
+    function reduce(state,action) {
+      var next = {
+        currentId:state.currentId,
+        clock:state.clock,
+        note:state.note,
+        rooms:state.rooms.map(function(room) { return Object.assign({},room); })
+      };
+      if(action.type === "next") {
+        var first = pendingRooms(state)[0];
+        if(!first) { next.note="全部睇完喇，暫時冇下一個 chat。"; return next; }
+        action={ type:"open", id:first.id, fromNext:true };
+      }
+      var room=next.rooms.find(function(item) { return item.id === action.id; });
+      if(!room) return next;
+      if(action.type === "open") {
+        next.currentId=room.id;
+        room.unread=false;
+        room.pendingAt=null;
+        room.reason=null;
+        next.note=(action.fromNext ? "Next → " : "自己開咗 ") + room.workspace + " / " + room.title + "。一開就移出待睇隊列。";
+      }
+      if(action.type === "unread") {
+        room.unread=true;
+        room.pendingAt=next.clock++;
+        room.reason="手動 unread";
+        next.note=room.workspace + " / " + room.title + " 已標成 unread；Next 會開返呢個 workspace 嘅 chat。";
+      }
+      if(action.type === "reply") {
+        room.replies++;
+        room.content="第 " + room.replies + " 輪回覆完成，等你睇新內容。";
+        if(!room.unread) {
+          room.unread=true;
+          room.pendingAt=next.clock++;
+          room.reason="回覆完成";
+        } else {
+          next.clock++;
+        }
+        next.note=room.title + " 有新回覆。" + (room.replies>1 ? "每個 chat 仍然只排一次。" : "");
+      }
+      return next;
+    }
+
+    var scenarios=[
+      {
+        name:"順序跳 chat", unread:true,
+        copy:"A 先回覆，之後 B，再之後 C。連撳 Next，留意 workspace 同 chat 會一齊切換。",
+        steps:[
+          { label:"1 · Next 去 A", action:{type:"next"} },
+          { label:"2 · Next 去 B", action:{type:"next"} },
+          { label:"3 · Next 去 C", action:{type:"next"} }
+        ]
+      },
+      {
+        name:"手動 unread", unread:false,
+        copy:"先睇 A，再標返 unread。返去目前 workspace 之後，Next 應該帶你返 work 入面嘅 A。",
+        steps:[
+          { label:"1 · 開 A", action:{type:"open",id:"A"} },
+          { label:"2 · A 標 unread", action:{type:"unread",id:"A"} },
+          { label:"3 · 返目前 chat", action:{type:"open",id:"D"} },
+          { label:"4 · Next 返 A", action:{type:"next"} }
+        ]
+      },
+      {
+        name:"自己開 chat", unread:true,
+        copy:"唔經 Next，直接開 B。B 都會變已睇；之後 Next 會去 A，再去 C。",
+        steps:[
+          { label:"1 · 直接開 B", action:{type:"open",id:"B"} },
+          { label:"2 · Next 去 A", action:{type:"next"} },
+          { label:"3 · Next 去 C", action:{type:"next"} }
+        ]
+      },
+      {
+        name:"睇完再有回覆", unread:false,
+        copy:"全部睇完，Next 會停用。B 再回覆，就重新有一個待睇 chat。",
+        steps:[
+          { label:"1 · B 再回覆", action:{type:"reply",id:"B"} },
+          { label:"2 · Next 去 B", action:{type:"next"} }
+        ]
+      }
+    ];
+    var state=initialState(true), scenarioIndex=0, stepIndex=0;
+    function time(value) { return String(Math.floor(value/60)).padStart(2,"0")+":"+String(value%60).padStart(2,"0"); }
+    function dispatch(action) { state=reduce(state,action); render(); }
+    function chooseScenario(index) {
+      scenarioIndex=index;
+      stepIndex=0;
+      state=initialState(scenarios[index].unread);
+      render();
+    }
+    function render() {
+      var current=state.rooms.find(function(room) { return room.id===state.currentId; });
+      var pending=pendingRooms(state);
+      document.getElementById("breadcrumb").textContent=current.workspace+" / Chat";
+      document.getElementById("chat-title").textContent=current.title;
+      document.getElementById("message").textContent=current.content;
+      document.getElementById("message-detail").textContent=current.unread ? "呢個 chat 已標成 unread。" : "已睇 · 開 chat 時自動移出隊列";
+      document.getElementById("current-workspace").textContent=current.workspace;
+      document.getElementById("current-chat").textContent=current.title;
+      document.getElementById("pending-count").textContent=pending.length+" 個";
+      document.getElementById("status").textContent=state.note;
+      var nextButton=document.getElementById("next");
+      nextButton.textContent="Next · "+pending.length;
+      nextButton.disabled=pending.length===0;
+      nextButton.title=pending.length ? "下一個：" + pending[0].workspace + " / " + pending[0].title : "暫時冇待睇 chat";
+      nextButton.setAttribute("aria-label",nextButton.title);
+
+      var rooms=document.getElementById("rooms");
+      rooms.innerHTML="";
+      ["work","notewing","paseo"].forEach(function(workspaceId) {
+        var grouped=state.rooms.filter(function(room) { return room.workspaceId===workspaceId; });
+        var label=document.createElement("div");
+        label.className="workspace";
+        label.textContent=grouped[0].workspace;
+        rooms.appendChild(label);
+        grouped.forEach(function(room) {
+          var row=document.createElement("div");
+          row.className="room";
+          var open=document.createElement("button");
+          open.className="room-open"+(room.id===state.currentId ? " active" : "");
+          var dot=document.createElement("span");
+          dot.className="dot"+(room.unread ? "" : " read");
+          dot.setAttribute("aria-hidden","true");
+          open.appendChild(dot);
+          open.appendChild(document.createTextNode(room.title));
+          open.setAttribute("aria-label","開 "+room.workspace+" / "+room.title);
+          open.onclick=function() { dispatch({type:"open",id:room.id}); };
+          var unread=document.createElement("button");
+          unread.className="unread-small";
+          unread.textContent="unread";
+          unread.setAttribute("aria-label","將 "+room.title+" 標成 unread");
+          unread.onclick=function() { dispatch({type:"unread",id:room.id}); };
+          row.appendChild(open);
+          row.appendChild(unread);
+          rooms.appendChild(row);
+        });
+      });
+      var queue=document.getElementById("queue");
+      queue.innerHTML="";
+      if(!pending.length) {
+        var empty=document.createElement("div");
+        empty.className="empty";
+        empty.textContent="全部睇完喇";
+        queue.appendChild(empty);
+      }
+      pending.forEach(function(room,index) {
+        var row=document.createElement("div");
+        row.className="queue-row";
+        row.innerHTML='<span class="rank">'+(index+1)+'</span><div><div class="queue-name">'+room.title+'</div><div class="queue-detail">'+room.workspace+' · '+room.reason+'</div></div><span class="time">'+time(room.pendingAt)+'</span>';
+        queue.appendChild(row);
+      });
+      var tabs=document.getElementById("tabs");
+      tabs.innerHTML="";
+      scenarios.forEach(function(scenario,index) {
+        var tab=document.createElement("button");
+        tab.className="tab"+(index===scenarioIndex ? " selected" : "");
+        tab.textContent=scenario.name;
+        tab.setAttribute("role","tab");
+        tab.setAttribute("aria-selected",index===scenarioIndex ? "true" : "false");
+        tab.onclick=function() { chooseScenario(index); };
+        tabs.appendChild(tab);
+      });
+      var selected=scenarios[scenarioIndex];
+      document.getElementById("scenario-copy").textContent=selected.copy;
+      var steps=document.getElementById("steps");
+      steps.innerHTML="";
+      selected.steps.forEach(function(step,index) {
+        var button=document.createElement("button");
+        button.className="step"+(index<stepIndex ? " done" : "")+(index===stepIndex ? " primary" : "");
+        button.textContent=(index<stepIndex ? "✓ " : "")+step.label;
+        button.disabled=index!==stepIndex;
+        button.onclick=function() { stepIndex++; dispatch(step.action); };
+        steps.appendChild(button);
+      });
+    }
+    document.getElementById("next").onclick=function() { dispatch({type:"next"}); };
+    document.getElementById("mark-current").onclick=function() { dispatch({type:"unread",id:state.currentId}); };
+    document.getElementById("reset").onclick=function() { chooseScenario(0); };
+    document.getElementById("freeplay").addEventListener("click",function(event) {
+      var id=event.target.getAttribute("data-reply");
+      if(id) dispatch({type:"reply",id:id});
+    });
+    document.getElementById("theme").onclick=function() {
+      var dark=document.body.classList.toggle("dark");
+      document.getElementById("theme").textContent=dark ? "淺色" : "深色";
+    };
+    render();
+  </script>
+</body>
+</html>
