@@ -1,5 +1,26 @@
 # Next unread
 
+A Paseo plugin that opens unread agent replies from oldest to newest across all workspaces on the same daemon.
+
+## Installation
+
+Requires Paseo app and daemon `0.11.0-beta.4` or a compatible newer version, with plugins enabled.
+
+```sh
+paseo plugin install npm:@summerisgood/paseo-next-check@0.1.0
+```
+
+Or paste `npm:@summerisgood/paseo-next-check@0.1.0` into **Settings → Plugins → Plugin source**.
+
+## Limitations
+
+- **Next unread** uses Paseo's native unread state and opens the destination workspace with its chat. Only completed replies are queued; permission and error alerts use Paseo's own flow.
+- **Mark as unread** is available on desktop/web. It uses the native workspace menu to mark that workspace's latest eligible chat, which may differ from the chat currently open. Show the target workspace in the sidebar before using it.
+- The workspace menu bridge depends on Paseo's DOM structure and may need an update after a Paseo release. Next unread was tested in the desktop app; the Mark as unread bridge passed browser fixture checks and unit tests, but its final desktop click has not been verified.
+- Paseo controls composer pill placement and styling.
+
+## 用法
+
 喺 Paseo 多個 agent chats 之間，撳輸入框旁邊嘅 **Next unread**，就會開下一個待睇 chat，同時切去佢所屬嘅 workspace。
 
 - 包含同一部 daemon 所有 workspaces 嘅非 archived chats。
@@ -12,7 +33,7 @@ Desktop／web 會喺 **Next unread** 隔離加 **Mark as unread**。呢粒掣沿
 
 Paseo `0.11.0-beta.4` 嘅 plugin API 只提供 Tasks／Subagents 同一行嘅 composer pill。位置、外框同 icon 排法由 Paseo 控制，所以呢個版本未能完全複製 Conductor 輸入框右上方嘅 `Next unread ›` 擺位。
 
-## 安裝
+## 本機開發
 
 需要 app 同 daemon 都係 Paseo `0.11.0-beta.4` 或相容新版本，亦要開咗 plugins。開發測試用 Node `22.18+`。
 
