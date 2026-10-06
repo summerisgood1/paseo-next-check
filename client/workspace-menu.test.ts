@@ -67,7 +67,7 @@ test("sidebar 冇目標 workspace 會報錯，唔會操作另一個 workspace", 
   assert.equal(ui.listeners.size, 0);
 });
 
-test("切走 chat 或停用 plugin 會取消等待，遲到嘅 menu 唔會觸發操作", async () => {
+test("取消請求或停用 plugin 會停止等待，遲到嘅 menu 唔會觸發操作", async () => {
   const ui = menu();
   ui.add(triggerId);
   const request = new AbortController();

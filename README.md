@@ -16,7 +16,7 @@ Or paste `npm:@summerisgood/paseo-next-check@0.1.0` into **Settings → Plugins 
 
 - **Next unread** uses Paseo's native unread state and opens the destination workspace with its chat. Only completed replies are queued; permission and error alerts use Paseo's own flow.
 - **Mark as unread** is available on desktop/web. It uses the native workspace menu to mark that workspace's latest eligible chat, which may differ from the chat currently open. Show the target workspace in the sidebar before using it.
-- The workspace menu bridge depends on Paseo's DOM structure and may need an update after a Paseo release. Next unread was tested in the desktop app; the Mark as unread bridge passed browser fixture checks and unit tests, but its final desktop click has not been verified.
+- The workspace menu bridge depends on Paseo's DOM structure and may need an update after a Paseo release. Next unread was tested in the desktop app; Mark as unread passed unit tests and browser checks with Paseo's native menu components and pending button lifecycle, but its final desktop click has not been verified.
 - Paseo controls composer pill placement and styling.
 
 ## 用法
@@ -58,6 +58,6 @@ SDK 暫時冇原生 Mark as unread 接口。`Mark as unread` 會按目前 host �
 
 ## 驗證
 
-`npm test` 驗證跨 workspace 次序、手動開 chat、手動 unread、新回覆、空隊列、分頁同 reconnect，亦會驗證原生選單嘅 host／workspace 配對、右鍵後備、取消、disabled 同 timeout。
+`npm test` 驗證跨 workspace 次序、手動開 chat、手動 unread、新回覆、空隊列、分頁同 reconnect，亦會驗證原生選單嘅 host／workspace 配對、右鍵後備、取消、disabled 同 timeout。React 生命週期測試會確認 Paseo 將 icon 換成 pending spinner 時唔會取消請求，而移除 plugin registration 時仍然會取消。
 
 舊設計原型喺 `client/next-check.prototype.html`，只係 mock 資料；已安裝 plugin 用真實 Paseo 狀態。

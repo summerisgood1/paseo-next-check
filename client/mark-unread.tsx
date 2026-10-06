@@ -8,18 +8,13 @@ export function addMarkUnreadPill(
   agent: { id: string; workspaceId: string },
 ): PluginButtonRegistration | undefined {
   if (!supportsWorkspaceUnread()) return;
-  let mounted: { serverId: string; request: AbortController } | undefined;
-  let removed = false;
+  let serverId: string | undefined;
+  const lifetime = new AbortController();
 
   function MarkUnreadIcon({ host, size, color }: PluginButtonIconProps) {
     useEffect(() => {
-      if (removed) return;
-      const view = { serverId: host.id, request: new AbortController() };
-      mounted = view;
-      return () => {
-        view.request.abort();
-        if (mounted === view) mounted = undefined;
-      };
+      if (!lifetime.signal.aborted) serverId = host.id;
+      // Paseo pending 時會用 spinner 換走 icon；取消要跟 registration，唔可以跟 icon unmount。
     }, [host.id]);
     return <Icon name="Circle" size={size} color={color} />;
   }
@@ -32,10 +27,10 @@ export function addMarkUnreadPill(
       behavior: {
         kind: "action",
         async onPress() {
-          if (!mounted || removed) throw new Error("Open this chat before marking its workspace as unread.");
+          if (!serverId || lifetime.signal.aborted) throw new Error("Open this chat before marking its workspace as unread.");
           await markWorkspaceUnread({
-            serverId: mounted.serverId, workspaceId: agent.workspaceId,
-          }, mounted.request.signal);
+            serverId, workspaceId: agent.workspaceId,
+          }, lifetime.signal);
         },
       },
     },
@@ -43,8 +38,8 @@ export function addMarkUnreadPill(
   return {
     update: (patch) => registration.update(patch),
     remove() {
-      removed = true;
-      mounted?.request.abort();
+      lifetime.abort();
+      serverId = undefined;
       registration.remove();
     },
   };
