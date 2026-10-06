@@ -15,7 +15,7 @@ Or paste `npm:@summerisgood/paseo-next-check@0.1.0` into **Settings → Plugins 
 ## Limitations
 
 - **Next unread** uses Paseo's native unread state and opens the destination workspace with its chat. Only completed replies are queued; permission and error alerts use Paseo's own flow.
-- **Mark as unread** is available on desktop/web. It uses the native workspace menu to mark that workspace's latest eligible chat, which may differ from the chat currently open. Show the target workspace in the sidebar before using it.
+- **Mark as unread** is available on desktop/web. It uses the native workspace menu to mark that workspace's latest eligible chat, which may differ from the chat currently open. Show the target workspace in the sidebar before using it. If automatic selection is unavailable, it leaves the menu open and shows an informational "not supported yet" notice instead of an error.
 - The workspace menu bridge depends on Paseo's DOM structure and may need an update after a Paseo release. Next unread was tested in the desktop app; Mark as unread passed unit tests and browser checks with Paseo's native menu components and pending button lifecycle, but its final desktop click has not been verified.
 - Paseo controls composer pill placement and styling.
 
@@ -54,10 +54,10 @@ plugin 用官方 `client.paseo.agents.list({ subscribe: {} })` 讀原生 unread 
 
 新回覆喺目前開住嘅 chat 完成時，Paseo 會延後清除 unread，直到 input focus、send 或 blur。`Next unread` 會排除今次操作嘅來源 chat，避免已讀更新未到時又跳返自己。
 
-SDK 暫時冇原生 Mark as unread 接口。`Mark as unread` 會按目前 host 同 workspace 嘅識別碼開原生選單，再揀原生操作；原生流程會先取消 pane focus，令 unread 保留。Sidebar 收埋或目標 workspace 未顯示時，請先打開 sidebar 同顯示該 workspace。Paseo 更新選單結構之後，呢個後備操作可能需要跟住更新；搵唔到目標操作會顯示錯誤，唔會揀其他 workspace 嘅同名操作。
+SDK 暫時冇原生 Mark as unread 接口。`Mark as unread` 會按目前 host 同 workspace 嘅識別碼開原生選單，再揀原生操作；原生流程會先取消 pane focus，令 unread 保留。Sidebar 收埋或目標 workspace 未顯示時，請先打開 sidebar 同顯示該 workspace。Paseo 更新選單結構之後，呢個後備操作可能需要跟住更新；未能自動標記時會保留已開嘅選單，只顯示未支援直接操作嘅普通資訊提示。唔會彈 error，亦唔會揀其他 workspace 嘅同名操作。
 
 ## 驗證
 
-`npm test` 驗證跨 workspace 次序、手動開 chat、手動 unread、新回覆、空隊列、分頁同 reconnect，亦會驗證原生選單嘅 host／workspace 配對、右鍵後備、取消、disabled 同 timeout。React 生命週期測試會確認 Paseo 將 icon 換成 pending spinner 時唔會取消請求，而移除 plugin registration 時仍然會取消。
+`npm test` 驗證跨 workspace 次序、手動開 chat、手動 unread、新回覆、空隊列、分頁同 reconnect，亦會驗證原生選單嘅 host／workspace 配對、右鍵後備、取消、disabled 同 timeout。React 生命週期測試會確認 Paseo 將 icon 換成 pending spinner 時唔會取消請求，未能自動標記只會顯示資訊提示，而移除 plugin registration 時仍然會取消兼保持靜默。
 
 舊設計原型喺 `client/next-check.prototype.html`，只係 mock 資料；已安裝 plugin 用真實 Paseo 狀態。

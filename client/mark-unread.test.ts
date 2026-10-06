@@ -7,6 +7,7 @@ import React, { act } from "react";
 import { create, type ReactTestRenderer } from "react-test-renderer";
 import ts from "typescript";
 import type { PluginButtonIconProps, PluginComposerPillContribution } from "@getpaseo/plugin/client";
+import type { ToastOptions } from "@getpaseo/plugin/client/react-native";
 import type { addMarkUnreadPill } from "./mark-unread.tsx";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -22,12 +23,15 @@ function fixture(t: TestContext) {
   });
   let signal!: AbortSignal;
   let complete!: () => void;
+  let fail!: (error: Error) => void;
   let contribution!: PluginComposerPillContribution;
   let removals = 0;
+  const notices: { message: string; options?: ToastOptions }[] = [];
+  const toast = { show(message: string, options?: ToastOptions) { notices.push({ message, options }); } };
   const module = { exports: {} as { addMarkUnreadPill: typeof addMarkUnreadPill } };
   // Node 唔會載入 React Native；只替換平台邊界，保留真正嘅 component、effect 同按掣 callback。
   const load = (name: string) => {
-    if (name === "@getpaseo/plugin/client/react-native") return { Icon: () => null };
+    if (name === "@getpaseo/plugin/client/react-native") return { Icon: () => null, useToast: () => toast };
     if (name === "./web.ts") return {
       supportsWorkspaceUnread: () => true,
       markWorkspaceUnread(_target: unknown, request: AbortSignal) {
@@ -35,6 +39,7 @@ function fixture(t: TestContext) {
         return new Promise<void>((resolve, reject) => {
           const abort = () => reject(new Error("Mark as unread was canceled."));
           complete = () => { signal.removeEventListener("abort", abort); resolve(); };
+          fail = (error) => { signal.removeEventListener("abort", abort); reject(error); };
           if (signal.aborted) abort();
           else signal.addEventListener("abort", abort, { once: true });
         });
@@ -56,7 +61,8 @@ function fixture(t: TestContext) {
     assert.equal(behavior.kind, "action");
     return Promise.resolve((behavior as Extract<typeof behavior, { kind: "action" }>).onPress());
   };
-  return { registration, icon, press, signal: () => signal, complete: () => complete(), removals: () => removals };
+  return { registration, icon, press, signal: () => signal, complete: () => complete(),
+    fail: (error: Error) => fail(error), notices, removals: () => removals };
 }
 
 test("Paseo pending 狀態將 icon 換成 spinner，唔會取消已開始嘅原生 unread 操作", async (t) => {
@@ -73,6 +79,7 @@ test("Paseo pending 狀態將 icon 換成 spinner，唔會取消已開始嘅原�
     f.complete();
     await pending;
     assert.equal(error, undefined);
+    assert.deepEqual(f.notices, []);
   } finally {
     f.registration.remove();
     await pending;
@@ -80,15 +87,34 @@ test("Paseo pending 狀態將 icon 換成 spinner，唔會取消已開始嘅原�
   }
 });
 
-test("plugin registration 移除時仍然會取消原生選單操作", async (t) => {
+test("plugin registration 移除時仍然會取消原生選單操作，唔顯示錯誤或未支援提示", async (t) => {
   const f = fixture(t);
   let renderer!: ReactTestRenderer;
   await act(async () => { renderer = create(f.icon()); });
   const pending = f.press();
-  const canceled = assert.rejects(pending, /canceled/);
   f.registration.remove();
-  await canceled;
+  await pending;
   assert.equal(f.signal().aborted, true);
   assert.equal(f.removals(), 1);
+  assert.deepEqual(f.notices, []);
   await act(async () => { renderer.unmount(); });
+});
+
+test("原生選單無法自動標 unread 時只顯示未支援資訊，唔觸發 Paseo error toast", async (t) => {
+  const f = fixture(t);
+  let renderer!: ReactTestRenderer;
+  await act(async () => { renderer = create(f.icon()); });
+  const pending = f.press();
+  // Paseo 將 icon 換成 spinner 後，資訊提示都要繼續用到同一個 host 嘅 toast。
+  await act(async () => { renderer.update(React.createElement(React.Fragment, null, "Pending spinner")); });
+  f.fail(new Error("Paseo's Mark as unread menu is unavailable."));
+  try {
+    await pending;
+    assert.equal(f.notices.length, 1);
+    assert.match(f.notices[0].message, /not supported yet/);
+    assert.equal(f.notices[0].options?.variant, "info");
+  } finally {
+    f.registration.remove();
+    await act(async () => { renderer.unmount(); });
+  }
 });
