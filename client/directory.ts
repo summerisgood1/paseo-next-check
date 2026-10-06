@@ -1,11 +1,12 @@
-import type {
-  OwnedSubscription,
-  PaseoAgent,
-  PaseoAgentListOptions,
-  PaseoAgentListResult,
-  PaseoAgentUpdate,
-  PaseoApi,
-} from "@getpaseo/client";
+import type { PluginClientContext } from "@getpaseo/plugin/client";
+
+// 由 host 提供嘅公開 plugin SDK 推導 types，發佈包唔依賴本機 devDependencies。
+type PaseoApi = PluginClientContext["paseo"];
+type PaseoAgentListOptions = NonNullable<Parameters<PaseoApi["agents"]["list"]>[0]>;
+type PaseoAgentListResult = Awaited<ReturnType<PaseoApi["agents"]["list"]>>;
+type PaseoAgent = PaseoAgentListResult["entries"][number]["agent"];
+type PaseoAgentUpdate = Parameters<Parameters<PaseoApi["agents"]["subscribe"]>[0]>[0];
+type AgentSubscription = NonNullable<PaseoAgentListResult["subscription"]>;
 
 const query = {
   filter: { includeArchived: false },
@@ -55,7 +56,7 @@ export function observeDirectory(
 ): () => void {
   const lifetime = new AbortController();
   let state: DirectoryState = { agents: new Map(), loading: true, error: null };
-  let observation: OwnedSubscription<PaseoAgentListResult> | undefined;
+  let observation: AgentSubscription | undefined;
   let unsubscribe: (() => void) | undefined;
   let retry: ReturnType<typeof setTimeout> | undefined;
   let generation = 0;
