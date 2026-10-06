@@ -21,3 +21,6 @@ agent 已完成、但用戶仲未開過所屬 Chat room 嘅回覆，亦包括用
 
 **手動 unread**：
 用戶將已睇 Chat room 標返做待睇嘅操作；之後開返嗰個 Chat room 就再算已睇。
+
+**Mark as unread**：
+Desktop／web 嘅 composer pill，沿用 Paseo 原生 workspace 選單，將目前 workspace 最新、符合原生規則嘅 Chat room 標返 unread。呢個操作嘅範圍係 workspace，唔保證係目前開住嗰個 Chat room。
