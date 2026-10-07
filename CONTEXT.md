@@ -24,3 +24,6 @@ agent 已完成、但用戶仲未開過所屬 Chat room 嘅回覆，亦包括用
 
 **Mark as unread**：
 Desktop／web 嘅 composer pill，沿用 Paseo 原生 workspace 選單，將目前 workspace 最新、符合原生規則嘅 Chat room 標返 unread。呢個操作嘅範圍係 workspace，唔保證係目前開住嗰個 Chat room。
+
+**Code review**：
+Composer pill，叫目前 Chat room 嘅 agent 用自己 provider 原生嘅 review 睇所屬 workspace 嘅改動，再篩選成一個由最嚴重排起、逐點判斷要唔要改嘅表。

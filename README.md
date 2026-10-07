@@ -17,6 +17,7 @@ Or paste `npm:@summerisgood/paseo-next-check@0.1.1` into **Settings → Plugins 
 - **Next unread** uses Paseo's native unread state and opens the destination workspace with its chat. Only completed replies are queued; permission and error alerts use Paseo's own flow.
 - **Mark as unread** is available on desktop/web. It uses the native workspace menu to mark that workspace's latest eligible chat, which may differ from the chat currently open. Show the target workspace in the sidebar before using it. If automatic selection is unavailable, it leaves the menu open and shows an informational "not supported yet" notice instead of an error.
 - The workspace menu bridge depends on Paseo's DOM structure and may need an update after a Paseo release. Next unread was tested in the desktop app; Mark as unread passed unit tests and browser checks with Paseo's native menu components and pending button lifecycle, but its final desktop click has not been verified.
+- **Code review** asks the current agent for its native review — `/code-review medium` on Claude Code, `codex review --uncommitted` on Codex — and then to triage the findings into one table, most severe first, marking each Fix or Skip. Other providers get a plain bug review with the same triage. Codex runs its reviewer as a nested CLI because Paseo does not expose Codex's review mode, so its sandbox may ask for permission. It is disabled while the agent is running, starting, or closed.
 - Paseo controls composer pill placement and styling.
 
 ## 用法
@@ -29,7 +30,9 @@ Or paste `npm:@summerisgood/paseo-next-check@0.1.1` into **Settings → Plugins 
 - 包含 `attentionReason: "finished"` 嘅待睇回覆；permission 同 error 提示保留喺 Paseo 原生流程。
 - 冇下一個待睇 chat 嗰陣，掣會 disabled。
 
-Desktop／web 會喺 **Next unread** 隔離加 **Mark as unread**。呢粒掣沿用原生 workspace 選單，所以會標記目前 workspace 最新、符合原生規則嘅 chat；唔保證係目前開住嗰個 chat。手機版暫時只顯示 **Next unread**。
+Desktop／web 會喺 **Next unread** 隔離加 **Mark as unread**。呢粒掣沿用原生 workspace 選單，所以會標記目前 workspace 最新、符合原生規則嘅 chat；唔保證係目前開住嗰個 chat。手機版暫時冇 **Mark as unread**。
+
+**Code review** 會叫目前個 agent 先行佢原生嘅 review（Claude：`/code-review medium`；Codex：`codex review --uncommitted`），再逐點對返 code 篩選，出一個表：最嚴重排頭，每點標「Fix」或者「Skip」同埋原因，未改 code。Paseo 冇開放 Codex 原生 review 模式，所以 Codex 係喺 shell 行 CLI，sandbox 可能會問 permission。agent 跑緊、啟動緊或者已關閉嗰陣 disabled。
 
 Paseo `0.11.0-beta.4` 嘅 plugin API 只提供 Tasks／Subagents 同一行嘅 composer pill。位置、外框同 icon 排法由 Paseo 控制，所以呢個版本未能完全複製 Conductor 輸入框右上方嘅 `Next unread ›` 擺位。
 
