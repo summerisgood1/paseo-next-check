@@ -7,10 +7,10 @@ A Paseo plugin that opens unread agent replies from oldest to newest across all 
 Requires Paseo app and daemon `0.11.0-beta.4` or a compatible newer version, with plugins enabled.
 
 ```sh
-paseo plugin install npm:@summerisgood/paseo-next-check@0.1.1
+paseo plugin install npm:@summerisgood/paseo-next-check@0.2.0
 ```
 
-Or paste `npm:@summerisgood/paseo-next-check@0.1.1` into **Settings → Plugins → Plugin source**.
+Or paste `npm:@summerisgood/paseo-next-check@0.2.0` into **Settings → Plugins → Plugin source**.
 
 ## Limitations
 

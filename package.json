@@ -1,6 +1,6 @@
 {
   "name": "@summerisgood/paseo-next-check",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "type": "module",
   "files": [
     "paseo-plugin.json",
@@ -27,7 +27,7 @@
     "typescript": "^5.9.3",
     "zod": "^4.4.3"
   },
-  "description": "Open the oldest unread agent reply across Paseo workspaces, with a native workspace Mark as unread shortcut.",
+  "description": "Open the oldest unread agent reply across Paseo workspaces, with a native workspace Mark as unread shortcut and a Code review pill that triages native review findings.",
   "author": "summerisgood",
   "repository": {
     "type": "git",
